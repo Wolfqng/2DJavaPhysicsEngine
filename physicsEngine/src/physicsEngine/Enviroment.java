@@ -64,6 +64,8 @@ public class Enviroment extends JPanel {
 	    frame.setSize(1280 + 16, 896 + 39);  //Should be 1280, 896 although
 	    frame.setVisible(true);
 	    
+	    
+	    //Initializing some polygons
 	    double[] xp = new double[]{90, 90, 200, 200};
 	    double[] yp = new double[]{90, 200, 300, 90};
 	    objects.add(new Polygon(xp, yp, 10, 5, Color.black));
