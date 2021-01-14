@@ -7,19 +7,29 @@ import physicsEngine.events.CollisionEvent;
 import physicsEngine.events.CollisionPointEvent;
 
 public class Polygon {
-	private double[] xPoints;
-	private double[] yPoints;
+	//private double[] xPoints;
+	//private double[] yPoints;
+	ArrayList<Coord> coords = new ArrayList<>();
 	private Color c;
 	private double rotation;
 	private double mass;
 	
 	public Polygon(double[] xPoints, double[] yPoints, double rotation, double mass, Color c) {
-		this.xPoints = xPoints;
-		this.yPoints = yPoints;
+		//this.xPoints = xPoints;
+		//this.yPoints = yPoints;
+		this.coords = Coord.arraysToCoords(xPoints, yPoints);
 		this.rotation = rotation;
 		this.mass = mass;
 		this.c = c;
 		rotate(rotation);
+	}
+	
+	public Polygon(ArrayList<Coord> coords, double rotation, double mass, Color c) {
+		this.coords = coords;
+		this.rotation = rotation;
+		this.mass = mass;
+		this.c = c;
+		rotate(rotation);//
 	}
 	
 	public void update() {
@@ -30,16 +40,16 @@ public class Polygon {
 	
 	public void rotate(double deg) {
 		double rad = Math.toRadians(deg);
-		double[] cenPts = findCenter(this.xPoints, this.yPoints);
-		for(int i = 0; i < xPoints.length; i++) {
-			double x = this.xPoints[i];
-			double y = this.yPoints[i];
+		Coord centerCoord = findCenter(this.coords);
+		for(Coord c : this.coords) {
+			double x = c.getX();
+			double y = c.getY();
 			
-			x -= cenPts[0];
-			y -= cenPts[1];
+			x -= centerCoord.getX();
+			y -= centerCoord.getY();
 			
-			this.xPoints[i] = (x * Math.cos(rad)) - (y * Math.sin(rad)) + cenPts[0];
-			this.yPoints[i] = (y * Math.cos(rad)) + (x * Math.sin(rad)) + cenPts[1];
+			c.setX((x * Math.cos(rad)) - (y * Math.sin(rad)) + centerCoord.getX());
+			c.setY((y * Math.cos(rad)) + (x * Math.sin(rad)) + centerCoord.getY());
 		}
 	}
 	
@@ -64,21 +74,27 @@ public class Polygon {
 		return pts;
 	}
 	
-	//grabs an outer collider for optimization
-	public static double[][] outerColliderPoints(double[] xPoints, double[] yPoints) {
-		double[][] coords = new double[2][2];
-		double minX = getMin(xPoints);
-		double maxX = getMax(xPoints);
-		double minY = getMin(yPoints);
-		double maxY = getMax(yPoints);
-		coords[0] = new double[]{minX, maxX, maxX, minX};
-		coords[1] = new double[]{minY, minY, maxY, maxY};
-		return coords;
+	public static Coord findCenter(ArrayList<Coord> coords) {
+		Coord fCoord = new Coord();
+		double minX = getMin(Coord.getAllX(coords));
+		double maxX = getMax(Coord.getAllX(coords));
+		double minY = getMin(Coord.getAllY(coords));
+		double maxY = getMax(Coord.getAllY(coords));
+		fCoord.setX((maxX + minX) / 2);
+		fCoord.setY((maxY + minY) / 2);
+		return fCoord;//
 	}
 	
-	//this is just to make outerColliderPoints easier to access
-	public double[][] outerColliderPoints() {
-		return outerColliderPoints(this.xPoints, this.yPoints);
+	public static ArrayList<Coord> outerColliderPoints(ArrayList<Coord> iCoords) {
+		double minX = getMin(Coord.getAllX(iCoords));
+		double maxX = getMax(Coord.getAllX(iCoords));
+		double minY = getMin(Coord.getAllY(iCoords));
+		double maxY = getMax(Coord.getAllY(iCoords));
+		return Coord.arraysToCoords(new double[]{minX, maxX, maxX, minX}, new double[]{minY, minY, maxY, maxY});
+	}
+	
+	public ArrayList<Coord> outerColliderPoints() {
+		return outerColliderPoints(this.coords);
 	}
 	
 	//gets the maximum value from an array
@@ -99,7 +115,7 @@ public class Polygon {
 	
 	//Checks to see if the outer collision box is colliding with any other object
 	public ArrayList<CollisionEvent> getOuterCollisions() {
-		ArrayList<Polygon> objects = Enviroment.objects; //Can decide what to do with objects here
+		ArrayList<Polygon> objects = Enviroment.objects; //Can decide what objects should be here for optimization
 		ArrayList<CollisionEvent> collisions = new ArrayList<>();
 		for(Polygon obj : objects) {
 			if(!(obj == this)) {
@@ -114,22 +130,22 @@ public class Polygon {
 	
 	//checks if there is a collision in a rectangle
 	public static CollisionEvent checkBoxCollision(Polygon p1, Polygon p2) {
-		double[][] coord1 = p1.outerColliderPoints();
-		double[][] coord2 = p2.outerColliderPoints();
+		ArrayList<Coord> coords1 = p1.outerColliderPoints();
+		ArrayList<Coord> coords2 = p2.outerColliderPoints();
 		boolean collision = true;
 		
 		for(int i = 0; i < 2; i++) {
-			if(coord1[0][0] > coord2[0][1]) collision = false;
-			if(coord1[1][0] > coord2[1][2]) collision = false;
+			if(coords1.get(0).getX() > coords2.get(1).getX()) collision = false;
+			if(coords1.get(0).getY() > coords2.get(2).getY()) collision = false;
 			
-			if(coord1[0][1] < coord2[0][0]) collision = false;
-			if(coord1[1][2] < coord2[1][0]) collision = false;
+			if(coords1.get(1).getX() < coords2.get(0).getX()) collision = false;
+			if(coords1.get(2).getY() < coords2.get(0).getY()) collision = false;
 			
 			if(collision) return new CollisionEvent(p1, p2);
 			
-			double[][] temp = coord1;
-			coord1 = coord2;
-			coord2 = temp;
+			ArrayList<Coord> temp = coords1;
+			coords1 = coords2;
+			coords2 = temp;
 			collision = true;
 		}
 		
@@ -137,36 +153,32 @@ public class Polygon {
 	}
 	
 	//generates points on a polygons edges
-	public static double[][] generateCollisionPoints(Polygon p) {
-		double sensitivity = 40; //How many points to check on a edge
-		double[][] points = new double[2][(int)sensitivity * p.getxPoints().length];		
-		int index = 0;
+	public static ArrayList<Coord> generateCollisionPoints(Polygon p) {
+		double sensitivity = 40; //How many points to check on a edge	
+		ArrayList<Coord> points = new ArrayList<>();
 		
-		for(int i = 0; i < p.getxPoints().length; i++) {
+		for(int i = 0; i < p.getCoords().size(); i++) {
 			double px1, py1, px2, py2;
-			px1 = p.getxPoints()[i];
-			py1 = p.getyPoints()[i];
-			if(i != p.getxPoints().length - 1) {
-				px2 = p.getxPoints()[i + 1];
-				py2 = p.getyPoints()[i + 1];
+			double[] xPoints = Coord.getAllX(p.getCoords());
+			double[] yPoints = Coord.getAllY(p.getCoords());
+			px1 = xPoints[i];
+			py1 = yPoints[i];
+			if(i != xPoints.length - 1) {
+				px2 = xPoints[i + 1];
+				py2 = yPoints[i + 1];
 			}else {
-				px2 = p.getxPoints()[0];
-				py2 = p.getyPoints()[0];
+				px2 = xPoints[0];
+				py2 = yPoints[0];
 			}
 			
 			double edgeLen = Math.hypot(px2 - px1, py2 - py1);
 			double cp = edgeLen / sensitivity;
 			double ang = getPointAngles(new double[] {px1, py1}, new double[] {px2, py2});
-			for(int j = 0; j < sensitivity; j++) {
-				if(px2 < px1) {
-					points[0][index] = px1 - Math.cos(ang) * (cp * j);
-					points[1][index] = py1 - Math.sin(ang) * (cp * j);
-				}else {
-					points[0][index] = Math.cos(ang) * (cp * j) + px1;
-					points[1][index] = Math.sin(ang) * (cp * j) + py1;
-				}
-				index++;
-			}
+			for(int j = 0; j < sensitivity; j++) 
+				if(px2 < px1)
+					points.add(new Coord(px1 - Math.cos(ang) * (cp * j), py1 - Math.sin(ang) * (cp * j)));
+				 else 
+					points.add(new Coord(Math.cos(ang) * (cp * j) + px1, Math.sin(ang) * (cp * j) + py1));
 		}
 		
 		return points;
@@ -180,26 +192,28 @@ public class Polygon {
 	public static CollisionPointEvent isPointInCollider(double x, double y, Polygon p, Polygon p2) {
 		int checks = 0;		
 
-			for(int j = 0; j < p.getxPoints().length; j++) {
-				double px1, py1, px2, py2;
-				px1 = p.getxPoints()[j];
-				py1 = p.getyPoints()[j];
-				if(j != p.getxPoints().length - 1) {
-					px2 = p.getxPoints()[j + 1];
-					py2 = p.getyPoints()[j + 1];
-				}else {
-					px2 = p.getxPoints()[0];
-					py2 = p.getyPoints()[0];
-				}
-				
-				double slope = (py2 - py1) / (px2 - px1);
-				double intercept = -(slope * px1) + py1; 
-
-				double poi = (y - intercept) / slope;
-				
-				if(poi < getMax(new double[] {px1, px2}) && poi > getMin(new double[] {px1, px2}) && poi > x) 
-					checks++;	
+		for(int i = 0; i < p.getCoords().size(); i++) {
+			double px1, py1, px2, py2;
+			double[] xPoints = Coord.getAllX(p.getCoords());
+			double[] yPoints = Coord.getAllY(p.getCoords());
+			px1 = xPoints[i];
+			py1 = yPoints[i];
+			if(i != xPoints.length - 1) {
+				px2 = xPoints[i + 1];
+				py2 = yPoints[i + 1];
+			}else {
+				px2 = xPoints[0];
+				py2 = yPoints[0];
 			}
+				
+			double slope = (py2 - py1) / (px2 - px1);
+			double intercept = -(slope * px1) + py1; 
+
+			double poi = (y - intercept) / slope;
+			
+			if(poi < getMax(new double[] {px1, px2}) && poi > getMin(new double[] {px1, px2}) && poi > x) 
+				checks++;	
+		}
 		if(checks % 2 == 1) 
 			return new CollisionPointEvent(p, p2, x, y);
 		return null;
@@ -209,20 +223,8 @@ public class Polygon {
 		return Math.atan((points2[1] - points1[1]) / (points2[0] - points1[0])); 
 	}
 	
-	public double[] getxPoints() {
-		return xPoints;
-	}
-
-	public void setxPoints(double[] xPoints) {
-		this.xPoints = xPoints;
-	}
-
-	public double[] getyPoints() {
-		return yPoints;
-	}
-
-	public void setyPoints(double[] yPoints) {
-		this.yPoints = yPoints;
+	public ArrayList<Coord> getCoords() {
+		return this.coords;
 	}
 
 	public Color getC() {

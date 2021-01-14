@@ -23,7 +23,7 @@ public class Enviroment extends JPanel {
 	private static final long serialVersionUID = 1L;
 	public static ArrayList<Polygon> objects = new ArrayList<>();
 	BufferedImage s;
-	public Queue<double[]> tp = new LinkedList<double[]>();
+	public Queue<Coord> tp = new LinkedList<Coord>();
 	
 	public Enviroment() {
 		try {
@@ -44,15 +44,14 @@ public class Enviroment extends JPanel {
 	    }
 	    
 	    g2d.setColor(Color.BLACK);
-	    //Width 5, JOIN_BEVEL
-	    BasicStroke stroke = new BasicStroke(5, 2, 2);
+	    BasicStroke stroke = new BasicStroke(5, 2, 2);  //Width 5, JOIN_BEVEL
 	    g2d.setStroke(stroke);
 	    for(Polygon obj : objects) {
 	    	g2d.setColor(obj.getC());
-	    	g2d.drawPolygon(Polygon.doubleToIntArray(obj.getxPoints()), Polygon.doubleToIntArray(obj.getyPoints()), obj.getxPoints().length);
+	    	g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(obj.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(obj.getCoords())), obj.getCoords().size());
 	    	
 	    	generateOuterCollider(g2d, obj);
-	    	//generateTrails(g2d, obj);
+	    	generateTrails(g2d, obj);
 	    }
 	    
 	  }
@@ -63,8 +62,7 @@ public class Enviroment extends JPanel {
 	    frame.add(new Enviroment());
 	    frame.setSize(1280 + 16, 896 + 39);  //Should be 1280, 896 although
 	    frame.setVisible(true);
-	    
-	    
+	    	    
 	    //Initializing some polygons
 	    double[] xp = new double[]{90, 90, 200, 200};
 	    double[] yp = new double[]{90, 200, 300, 90};
@@ -96,42 +94,40 @@ public class Enviroment extends JPanel {
 	//generate trail points
     public void generateTrails(Graphics2D g2d, Polygon obj) {
     	g2d.setPaint(new Color(255, 0, 0, 100));
-		for(int i = 0; i < obj.getxPoints().length; i++) {
-			double[] coord = new double[2];
-			coord[0] = obj.getxPoints()[i];
-			coord[1] = obj.getyPoints()[i];
-			tp.add(coord);
+		for(Coord c : obj.getCoords()) {
+			tp.add(new Coord(c.getX(), c.getY()));
+			if(tp.size() > 10000 * objects.size()) tp.remove(); //gives each polygon 10000 trail points	
 		}
-    	
-    	
-    	if(tp.size() > 10000) tp.remove();
-    	ArrayList<double[]> coords = new ArrayList<double[]>(tp);
-    	for(double[] coord : coords) 
-    		g2d.fillRect((int)coord[0], (int)coord[1], 1, 1);
+		
+    	for(Coord c : tp) 
+    		g2d.fillRect((int)c.getX(), (int)c.getY(), 1, 1);
+
     }
     
+    //Generates the outer collider and inner collider visual, really should change, this code should be in each polygon
     public void generateOuterCollider(Graphics2D g2d, Polygon obj) {
     	g2d.setPaint(new Color(255, 100, 255, 100));
-    	double[][] coords = obj.outerColliderPoints();
-    	g2d.drawPolygon(Polygon.doubleToIntArray(coords[0]), Polygon.doubleToIntArray(coords[1]), coords[0].length);
+    	ArrayList<Coord> coords = obj.outerColliderPoints();
+    	int[] xPoints = Polygon.doubleToIntArray(Coord.getAllX(coords));
+    	int[] yPoints = Polygon.doubleToIntArray(Coord.getAllY(coords));
+    	g2d.drawPolygon(xPoints, yPoints, coords.size());
 		
     	ArrayList<CollisionEvent> collisions = obj.getOuterCollisions();
     	if(!collisions.isEmpty()) {
-        	g2d.fillPolygon(Polygon.doubleToIntArray(coords[0]), Polygon.doubleToIntArray(coords[1]), coords[0].length);
+        	g2d.fillPolygon(xPoints, yPoints, coords.size());
     	
-	    	double[][] plen = Polygon.generateCollisionPoints(obj);
+        	ArrayList<Coord> plen = Polygon.generateCollisionPoints(obj);
 	    	
-	    	for(int i = 0; i < plen[0].length; i++) {
+	    	for(Coord pl : plen) {
 	    		g2d.setPaint(new Color(0, 0, 255, 255));
-	    		g2d.fillRect((int)plen[0][i], (int)plen[1][i], 2, 2);
+	    		g2d.fillRect((int)pl.getX(), (int)pl.getY(), 2, 2);
 	    		
 	    		for(Polygon obj2 : objects) { //You should change objects to a list that the first object is colliding with
 		    			if(!(obj == obj2)) {
-			    		CollisionPointEvent cpe = Polygon.isPointInCollider(plen[0][i], plen[1][i], obj2, obj);
+			    		CollisionPointEvent cpe = Polygon.isPointInCollider(pl.getX(), pl.getY(), obj2, obj);
 			    		if(cpe != null) {
-			    			//System.out.println(cpe);
 			    			g2d.setPaint(new Color(255, 0, 0, 100));
-			    			g2d.fillPolygon(Polygon.doubleToIntArray(obj.getxPoints()), Polygon.doubleToIntArray(obj.getyPoints()), obj.getxPoints().length);
+			    			g2d.fillPolygon(Polygon.doubleToIntArray(Coord.getAllX(obj.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(obj.getCoords())), obj.getCoords().size());
 			    		}
 	    			}
 	    		}
