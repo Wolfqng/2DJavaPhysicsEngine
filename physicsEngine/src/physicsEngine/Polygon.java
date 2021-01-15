@@ -1,65 +1,25 @@
 package physicsEngine;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
+import java.awt.Paint;
 import java.util.ArrayList;
 
-import physicsEngine.events.CollisionEvent;
 import physicsEngine.events.CollisionPointEvent;
 
-public class Polygon {
-	//private double[] xPoints;
-	//private double[] yPoints;
-	ArrayList<Coord> coords = new ArrayList<>();
-	private Color c;
-	private double rotation;
-	private double mass;
+public class Polygon extends Collider<Object> {
+	private ArrayList<Coord> coords = new ArrayList<>();
 	
 	public Polygon(double[] xPoints, double[] yPoints, double rotation, double mass, Color c) {
-		//this.xPoints = xPoints;
-		//this.yPoints = yPoints;
-		this.coords = Coord.arraysToCoords(xPoints, yPoints);
-		this.rotation = rotation;
-		this.mass = mass;
-		this.c = c;
+		super(c, mass, rotation);
+		this.setCoords(Coord.arraysToCoords(xPoints, yPoints));
 		rotate(rotation);
 	}
 	
 	public Polygon(ArrayList<Coord> coords, double rotation, double mass, Color c) {
-		this.coords = coords;
-		this.rotation = rotation;
-		this.mass = mass;
-		this.c = c;
-		rotate(rotation);//
-	}
-	
-	public void update() {
-		//Check for collisions
-		//Apply external forces
-		//Update position 
-	}
-	
-	public void rotate(double deg) {
-		double rad = Math.toRadians(deg);
-		Coord centerCoord = findCenter(this.coords);
-		for(Coord c : this.coords) {
-			double x = c.getX();
-			double y = c.getY();
-			
-			x -= centerCoord.getX();
-			y -= centerCoord.getY();
-			
-			c.setX((x * Math.cos(rad)) - (y * Math.sin(rad)) + centerCoord.getX());
-			c.setY((y * Math.cos(rad)) + (x * Math.sin(rad)) + centerCoord.getY());
-		}
-	}
-	
-	//converts double array to an integer array
-	public static int[] doubleToIntArray(double[] source) {
-	    int[] dest = new int[source.length];
-	    for(int i = 0; i < source.length; i++) {
-	        dest[i] = (int)source[i];
-	    }
-	    return dest;
+		super(c, mass, rotation);
+		this.setCoords(coords);
+		rotate(rotation);
 	}
 	
 	//get the theoretical center of any shape, this infers that xPoints and yPoints are of same size
@@ -82,7 +42,7 @@ public class Polygon {
 		double maxY = getMax(Coord.getAllY(coords));
 		fCoord.setX((maxX + minX) / 2);
 		fCoord.setY((maxY + minY) / 2);
-		return fCoord;//
+		return fCoord;
 	}
 	
 	public static ArrayList<Coord> outerColliderPoints(ArrayList<Coord> iCoords) {
@@ -93,74 +53,33 @@ public class Polygon {
 		return Coord.arraysToCoords(new double[]{minX, maxX, maxX, minX}, new double[]{minY, minY, maxY, maxY});
 	}
 	
-	public ArrayList<Coord> outerColliderPoints() {
-		return outerColliderPoints(this.coords);
-	}
-	
-	//gets the maximum value from an array
-	public static double getMax(double[] points) {
-		double max = points[0];
-		for(int i = 1; i < points.length; i++)
-			if(max < points[i]) max = points[i];
-		return max;
-	}
-	
-	//gets the minimum value from an array
-	public static double getMin(double[] points) {
-		double min = points[0];
-		for(int i = 1; i < points.length; i++)
-			if(min > points[i]) min = points[i];
-		return min;
-	}
-	
-	//Checks to see if the outer collision box is colliding with any other object
-	public ArrayList<CollisionEvent> getOuterCollisions() {
-		ArrayList<Polygon> objects = Enviroment.objects; //Can decide what objects should be here for optimization
-		ArrayList<CollisionEvent> collisions = new ArrayList<>();
-		for(Polygon obj : objects) {
-			if(!(obj == this)) {
-				CollisionEvent ce = checkBoxCollision(this, obj);
-				if(ce != null)
-					collisions.add(ce);
+	//Rotate an object
+		@Override
+		public void rotate(double deg) {
+			double rad = Math.toRadians(deg);
+			Coord centerCoord = Polygon.findCenter(this.getCoords());
+			for(Coord c : this.getCoords()) {
+				double x = c.getX();
+				double y = c.getY();
+				
+				x -= centerCoord.getX();
+				y -= centerCoord.getY();
+				
+				c.setX((x * Math.cos(rad)) - (y * Math.sin(rad)) + centerCoord.getX());
+				c.setY((y * Math.cos(rad)) + (x * Math.sin(rad)) + centerCoord.getY());
 			}
 		}
-		
-		return collisions;
-	}
-	
-	//checks if there is a collision in a rectangle
-	public static CollisionEvent checkBoxCollision(Polygon p1, Polygon p2) {
-		ArrayList<Coord> coords1 = p1.outerColliderPoints();
-		ArrayList<Coord> coords2 = p2.outerColliderPoints();
-		boolean collision = true;
-		
-		for(int i = 0; i < 2; i++) {
-			if(coords1.get(0).getX() > coords2.get(1).getX()) collision = false;
-			if(coords1.get(0).getY() > coords2.get(2).getY()) collision = false;
-			
-			if(coords1.get(1).getX() < coords2.get(0).getX()) collision = false;
-			if(coords1.get(2).getY() < coords2.get(0).getY()) collision = false;
-			
-			if(collision) return new CollisionEvent(p1, p2);
-			
-			ArrayList<Coord> temp = coords1;
-			coords1 = coords2;
-			coords2 = temp;
-			collision = true;
-		}
-		
-		return null;
-	}
 	
 	//generates points on a polygons edges
-	public static ArrayList<Coord> generateCollisionPoints(Polygon p) {
+	@Override
+	public ArrayList<Coord> generateCollisionPoints() {
 		double sensitivity = 40; //How many points to check on a edge	
 		ArrayList<Coord> points = new ArrayList<>();
 		
-		for(int i = 0; i < p.getCoords().size(); i++) {
+		for(int i = 0; i < this.getCoords().size(); i++) {
 			double px1, py1, px2, py2;
-			double[] xPoints = Coord.getAllX(p.getCoords());
-			double[] yPoints = Coord.getAllY(p.getCoords());
+			double[] xPoints = Coord.getAllX(this.getCoords());
+			double[] yPoints = Coord.getAllY(this.getCoords());
 			px1 = xPoints[i];
 			py1 = yPoints[i];
 			if(i != xPoints.length - 1) {
@@ -173,7 +92,7 @@ public class Polygon {
 			
 			double edgeLen = Math.hypot(px2 - px1, py2 - py1);
 			double cp = edgeLen / sensitivity;
-			double ang = getPointAngles(new double[] {px1, py1}, new double[] {px2, py2});
+			double ang = getPointAngles(new Coord(px1, py1), new Coord(px2, py2));
 			for(int j = 0; j < sensitivity; j++) 
 				if(px2 < px1)
 					points.add(new Coord(px1 - Math.cos(ang) * (cp * j), py1 - Math.sin(ang) * (cp * j)));
@@ -184,18 +103,23 @@ public class Polygon {
 		return points;
 	}
 	
+	public static double getPointAngles(Coord c1, Coord c2) {
+		return Math.atan((c2.getY() - c1.getY()) / (c2.getX() - c1.getX())); 
+	}
+	
 	//1) Draw a horizontal line to the right of each point and extend it to infinity
 	//2) Count the number of times the line intersects with polygon edges.
 	//3) A point is inside the polygon if either count of intersections is odd or
 	//   point lies on an edge of polygon.  If none of the conditions is true, then 
 	//   point lies outside.
-	public static CollisionPointEvent isPointInCollider(double x, double y, Polygon p, Polygon p2) {
+	@Override
+	public CollisionPointEvent isPointInCollider(double x, double y, Collider<Object> p) {
 		int checks = 0;		
 
-		for(int i = 0; i < p.getCoords().size(); i++) {
+		for(int i = 0; i < this.getCoords().size(); i++) {
 			double px1, py1, px2, py2;
-			double[] xPoints = Coord.getAllX(p.getCoords());
-			double[] yPoints = Coord.getAllY(p.getCoords());
+			double[] xPoints = Coord.getAllX(this.getCoords());
+			double[] yPoints = Coord.getAllY(this.getCoords());
 			px1 = xPoints[i];
 			py1 = yPoints[i];
 			if(i != xPoints.length - 1) {
@@ -215,39 +139,32 @@ public class Polygon {
 				checks++;	
 		}
 		if(checks % 2 == 1) 
-			return new CollisionPointEvent(p, p2, x, y);
+			return new CollisionPointEvent(this, p, x, y);
 		return null;
 	}
-	
-	public static double getPointAngles(double[] points1, double[] points2) {
-		return Math.atan((points2[1] - points1[1]) / (points2[0] - points1[0])); 
+
+	@Override
+	public void draw(Graphics2D g2d, Paint p) {
+		if(!this.isDrawn()) {
+			g2d.setPaint(p);
+			g2d.fillPolygon(Polygon.doubleToIntArray(Coord.getAllX(this.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(this.getCoords())), this.getCoords().size());
+		}
+		this.setDrawn(true);
 	}
 	
 	public ArrayList<Coord> getCoords() {
-		return this.coords;
+		return coords;
 	}
 
-	public Color getC() {
-		return c;
+	public void setCoords(ArrayList<Coord> coords) {
+		this.coords = coords;
 	}
-
-	public void setC(Color c) {
-		this.c = c;
+	
+	public boolean addCoord(Coord coord) {
+		return this.coords.add(coord);
 	}
-
-	public double getRotation() {
-		return rotation;
-	}
-
-	public void setRotation(double rotation) {
-		this.rotation = rotation;
-	}
-
-	public double getMass() {
-		return mass;
-	}
-
-	public void setMass(double mass) {
-		this.mass = mass;
+	
+	public boolean removeCoord(Coord coord) {
+		return this.coords.remove(coord);
 	}
 }

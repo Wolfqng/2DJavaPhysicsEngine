@@ -21,7 +21,7 @@ import physicsEngine.events.CollisionPointEvent;
 
 public class Enviroment extends JPanel {
 	private static final long serialVersionUID = 1L;
-	public static ArrayList<Polygon> objects = new ArrayList<>();
+    public static ArrayList<Collider<Object>> objects = new ArrayList<>();
 	BufferedImage s;
 	public Queue<Coord> tp = new LinkedList<Coord>();
 	
@@ -46,15 +46,21 @@ public class Enviroment extends JPanel {
 	    g2d.setColor(Color.BLACK);
 	    BasicStroke stroke = new BasicStroke(5, 2, 2);  //Width 5, JOIN_BEVEL
 	    g2d.setStroke(stroke);
-	    for(Polygon obj : objects) {
+	    for(Collider<Object> obj : objects) {
 	    	g2d.setColor(obj.getC());
-	    	g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(obj.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(obj.getCoords())), obj.getCoords().size());
+	    	if(obj instanceof Polygon) g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(((Polygon) obj).getCoords())), Polygon.doubleToIntArray(Coord.getAllY(((Polygon)obj).getCoords())), ((Polygon) obj).getCoords().size());
+	    	if(obj instanceof Circle) g2d.drawOval((int)((Circle) obj).getX() - (int)((Circle) obj).getRadius(), (int)((Circle) obj).getY() - (int)((Circle) obj).getRadius(), (int)((Circle) obj).getRadius() * 2, (int)((Circle) obj).getRadius() * 2);
+	    	
+
 	    	
 	    	generateOuterCollider(g2d, obj);
-	    	generateTrails(g2d, obj);
-	    }
-	    
-	  }
+	    	if(obj instanceof Polygon) generateTrails(g2d, (Polygon)obj);
+	    	if(obj instanceof Circle) {
+	    		g2d.setPaint(new Color(0, 0, 0));
+	    		g2d.fillRect((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), 1, 1);
+	    	}
+	    } 
+	}
 	
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Textures");
@@ -75,15 +81,23 @@ public class Enviroment extends JPanel {
 	    int yoff = 200;
 	    double[] xp2 = new double[]{100 + xoff2, 140 + xoff2, 210 + xoff2, 210 + xoff2, 300 + xoff2};
 	    double[] yp2 = new double[]{50 + yoff, 200 + yoff, 360 + yoff, 90 + yoff, 50 + yoff};
-	    objects.add(new Polygon(xp2, yp2, 10, 5, Color.blue));
+	    Polygon test = new Polygon(xp2, yp2, 10, 5, Color.blue);
+	    objects.add(test);
+	    
+	    Circle c = new Circle(500, 400, 120, Color.black, 20, 20);
+	    objects.add(c);
 	    
 	    Object monitor = new Object();
         synchronized(monitor) {
             while(true) {
                 frame.repaint();
-                for(Polygon p : objects) {
+                //ArrayList<Collider<Object>> objects = new ArrayList<>(objects);   //you should pass in this objects array, then
+                //only update the main arraylist, use this so you dont edit a objects coordinates then do physics for the next object
+                //Hopefully you still understand this.
+                for(Collider<Object> p : objects) {
                 	p.update();
                 	p.rotate(.1);
+                	p.setDrawn(false);
                 }
 
                 try{Thread.sleep(1);}catch(InterruptedException ex){Thread.currentThread().interrupt();}
@@ -101,11 +115,10 @@ public class Enviroment extends JPanel {
 		
     	for(Coord c : tp) 
     		g2d.fillRect((int)c.getX(), (int)c.getY(), 1, 1);
-
     }
     
     //Generates the outer collider and inner collider visual, really should change, this code should be in each polygon
-    public void generateOuterCollider(Graphics2D g2d, Polygon obj) {
+    public void generateOuterCollider(Graphics2D g2d, Collider<Object> obj) {
     	g2d.setPaint(new Color(255, 100, 255, 100));
     	ArrayList<Coord> coords = obj.outerColliderPoints();
     	int[] xPoints = Polygon.doubleToIntArray(Coord.getAllX(coords));
@@ -115,24 +128,25 @@ public class Enviroment extends JPanel {
     	ArrayList<CollisionEvent> collisions = obj.getOuterCollisions();
     	if(!collisions.isEmpty()) {
         	g2d.fillPolygon(xPoints, yPoints, coords.size());
-    	
-        	ArrayList<Coord> plen = Polygon.generateCollisionPoints(obj);
+        	ArrayList<Coord> plen = obj.generateCollisionPoints();
 	    	
 	    	for(Coord pl : plen) {
-	    		g2d.setPaint(new Color(0, 0, 255, 255));
+	    		g2d.setPaint(new Color(0, 255, 255, 255));
 	    		g2d.fillRect((int)pl.getX(), (int)pl.getY(), 2, 2);
 	    		
-	    		for(Polygon obj2 : objects) { //You should change objects to a list that the first object is colliding with
+	    		for(Collider<Object> obj2 : objects) { //You should change objects to a list that the first object is colliding with
 		    			if(!(obj == obj2)) {
-			    		CollisionPointEvent cpe = Polygon.isPointInCollider(pl.getX(), pl.getY(), obj2, obj);
+		    			//if(obj2 instanceof Circle) System.out.println(pl.getX() + " = " + pl.getY() + " = " + obj.getC());
+		    			CollisionPointEvent cpe = obj2.isPointInCollider(pl.getX(), pl.getY(), obj);
 			    		if(cpe != null) {
-			    			g2d.setPaint(new Color(255, 0, 0, 100));
-			    			g2d.fillPolygon(Polygon.doubleToIntArray(Coord.getAllX(obj.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(obj.getCoords())), obj.getCoords().size());
+			    			obj2.addCollision(cpe);
+			    			obj.draw(g2d, new Color(255, 0, 0, 50));
 			    		}
 	    			}
 	    		}
 	    	}
     	}
     }
+    
     
 }

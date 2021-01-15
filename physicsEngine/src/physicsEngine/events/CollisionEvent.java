@@ -2,33 +2,33 @@ package physicsEngine.events;
 
 import java.time.LocalDateTime;
 
-import physicsEngine.Polygon;
+import physicsEngine.Collider;
 
 public class CollisionEvent {
-	private Polygon p1;
-	private Polygon p2;
+	private Collider<Object> p1;
+	private Collider<Object> p2;
 	private LocalDateTime time;
 
-	public CollisionEvent(Polygon p1, Polygon p2) {
+	public CollisionEvent(Collider<Object> p1, Collider<Object> p2) {
 		super();
 		this.p1 = p1;
 		this.p2 = p2;
 		this.time = LocalDateTime.now(); 
 	}
 	
-	public Polygon getP1() {
+	public Collider<Object> getP1() {
 		return p1;
 	}
 
-	public void setP1(Polygon p1) {
+	public void setP1(Collider<Object> p1) {
 		this.p1 = p1;
 	}
 
-	public Polygon getP2() {
+	public Collider<Object> getP2() {
 		return p2;
 	}
 
-	public void setP2(Polygon p2) {
+	public void setP2(Collider<Object> p2) {
 		this.p2 = p2;
 	}
 

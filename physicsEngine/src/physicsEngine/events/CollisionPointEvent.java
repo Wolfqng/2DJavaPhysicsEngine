@@ -1,11 +1,11 @@
 package physicsEngine.events;
 
-import physicsEngine.Polygon;
+import physicsEngine.Collider;
 
 public class CollisionPointEvent extends CollisionEvent {
 	private double x, y;
 	
-	public CollisionPointEvent(Polygon p1, Polygon p2, double x, double y) {
+	public CollisionPointEvent(Collider<Object> p1, Collider<Object> p2, double x, double y) {
 		super(p1, p2);
 		this.x = x;
 		this.y = y;
