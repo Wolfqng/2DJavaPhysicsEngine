@@ -152,6 +152,18 @@ public class Polygon extends Collider<Object> {
 			g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(this.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(this.getCoords())), this.getCoords().size());
 	}
 	
+	@Override
+	public void translateX(double amt) {
+		for(Coord c : this.coords) 
+			c.setX(c.getX() + amt);
+	}
+	
+	@Override
+	public void translateY(double amt) {
+		for(Coord c : this.coords) 
+			c.setY(c.getY() + amt);
+	}
+	
 	public ArrayList<Coord> getCoords() {
 		return coords;
 	}

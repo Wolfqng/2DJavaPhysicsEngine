@@ -67,6 +67,16 @@ public class Circle extends Collider<Object> {
 		else
 			g2d.drawOval((int)(this.x - this.radius), (int)(this.y - this.radius), (int)(this.radius * 2), (int)(this.radius * 2));
 	}
+	
+	@Override
+	public void translateX(double amt) {
+		this.x += amt;
+	}
+	
+	@Override
+	public void translateY(double amt) {
+		this.y += amt;
+	}
 
 	public double getX() {
 		return x;

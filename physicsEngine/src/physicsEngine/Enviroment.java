@@ -27,6 +27,8 @@ public class Enviroment extends JPanel {
 	public static BufferedImage logo;
 	public static Queue<Coord> tp = new LinkedList<Coord>();
 	public static int fps = 0;
+	public static final double GRAVITY = 0.00005; //9 for now Tom look back here later
+	public static final int WIDTH = 1280, HEIGHT = 896;
 	
 	public Enviroment() {
 		try {
@@ -47,45 +49,48 @@ public class Enviroment extends JPanel {
 	    	}
 	    }
 	    
-	    g2d.setColor(Color.BLACK);
-	    BasicStroke stroke = new BasicStroke(5, 2, 2);  //Width 5, JOIN_BEVEL
-	    g2d.setStroke(stroke);
-	    for(Collider<Object> obj : objects) {
-	    	g2d.setColor(obj.getC());
-	    	obj.draw(g2d, obj.getC(), false);
-	    	
-	    	generateOuterCollider(g2d, obj);
-	    	if(obj instanceof Polygon) generateTrails(g2d, (Polygon)obj);
-	    	if(obj instanceof Circle) {
-	    		g2d.setPaint(new Color(0, 0, 0));
-	    	//	g2d.fillRect((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), 1, 1);
-	    		g2d.drawLine((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), (int)(Math.cos(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getX()), (int)(Math.sin(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getY()));
-	    	}
-	    } 
-	    
 	    Font f = new Font("Courier New", Font.BOLD, 40);
 	    g2d.setFont(f);
 		g2d.setColor(Color.RED);
 		g2d.drawString(Integer.toString(fps), 3, 8 + g2d.getFontMetrics().getHeight() / 2);
+	    
+	    g2d.setColor(Color.BLACK);
+	    BasicStroke stroke = new BasicStroke(5, 2, 2);  //Width 5, JOIN_BEVEL
+	    g2d.setStroke(stroke);
+	    ArrayList<Collider<Object>> objects = new ArrayList<>(Enviroment.objects);
+	    for(Collider<Object> obj : objects) {
+	    	g2d.setColor(obj.getC());
+	    	obj.draw(g2d, obj.getC(), false);
+	    	
+	    	drawCollisions(g2d, obj);
+	    	//generateOuterCollider(g2d, obj);
+	    	if(obj instanceof Polygon) generateTrails(g2d, (Polygon)obj);
+	    	if(obj instanceof Circle) {
+	    		g2d.setStroke(new BasicStroke(2));
+	    		g2d.setColor(Color.RED);
+	    		g2d.drawLine((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), (int)(Math.cos(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getX()), (int)(Math.sin(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getY()));
+	    	}
+	    } 
+	   
 	}
 	
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Textures");
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    frame.add(new Enviroment());
-	    frame.setSize(1280 + 16, 896 + 39);
+	    frame.setSize(WIDTH + 16, HEIGHT + 39);
 	    frame.setVisible(true);
-	    frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+	    //frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
 	    frame.setIconImage(logo);
 	    	    
 	    //Initializing some polygons
 	    double[] xp = new double[]{90, 90, 200, 200};
 	    double[] yp = new double[]{90, 200, 300, 90};
 	    objects.add(new Polygon(xp, yp, 10, 5, Color.black));
-	    int xoff = 200;
-	    double[] xp1 = new double[]{100 + xoff, 140 + xoff, 210 + xoff, 210 + xoff, 300 + xoff, 350 + xoff};
-	    double[] yp1 = new double[]{50, 200, 360, 90, 50, -20};
-	    objects.add(new Polygon(xp1, yp1, 10, 5, Color.green));
+	    //int xoff = 200;
+	    //double[] xp1 = new double[]{100 + xoff, 140 + xoff, 210 + xoff, 210 + xoff, 300 + xoff, 350 + xoff};
+	    //double[] yp1 = new double[]{50, 200, 360, 90, 50, -20};
+	    //objects.add(new Polygon(xp1, yp1, 10, 5, Color.green));
 	    int xoff2 = 100;
 	    int yoff = 200;
 	    double[] xp2 = new double[]{100 + xoff2, 140 + xoff2, 210 + xoff2, 210 + xoff2, 300 + xoff2};
@@ -112,6 +117,7 @@ public class Enviroment extends JPanel {
 				lastTime = curTime;
 				curTime = System.currentTimeMillis();
 				totalTime += curTime - lastTime;
+				double time = curTime - lastTime;
 				if (totalTime > 1000) {
 					totalTime -= 1000;
 					fps = frames;
@@ -121,6 +127,7 @@ public class Enviroment extends JPanel {
 				for(Collider<Object> p : objects) {
             	  p.update();
             	  p.rotate(.1);
+            	  Physics.applyForces(new ArrayList<>(objects), time);
                 }
 				Thread.sleep(1);
 		    } catch (InterruptedException e) {
@@ -174,5 +181,21 @@ public class Enviroment extends JPanel {
 	    	}
     	}
     }
+    
+    public void drawCollisions(Graphics2D g2d, Collider<Object> obj) {
+    	g2d.setPaint(new Color(255, 100, 255, 100));
+    	ArrayList<Coord> coords = obj.outerColliderPoints();
+    	int[] xPoints = Polygon.doubleToIntArray(Coord.getAllX(coords));
+    	int[] yPoints = Polygon.doubleToIntArray(Coord.getAllY(coords));
+    	g2d.drawPolygon(xPoints, yPoints, coords.size());
+    	
+    	if(obj.isOuterCollision()) 
+    		g2d.fillPolygon(xPoints, yPoints, coords.size());
+    	
+    	if(obj.isInnerCollision()) 
+    		obj.draw(g2d, new Color(255, 0, 0, 50), true);	
+    	
+    }
+    
 }
 

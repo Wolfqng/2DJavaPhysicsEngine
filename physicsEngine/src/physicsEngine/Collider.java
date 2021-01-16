@@ -10,14 +10,17 @@ import physicsEngine.events.CollisionPointEvent;
 
 public abstract class Collider<T> {
 	private Color c;
-	private double rotation;
-	private double mass;
+	private double rotation, mass, velX, velY;
+	private boolean outerCollision, innerCollision;
 	private ArrayList<T> collisions = new ArrayList<>();
+	private ArrayList<Accel> accelerations = new ArrayList<>();
 	
 	public abstract CollisionPointEvent isPointInCollider(double x, double y, Collider<Object> p);
 	public abstract ArrayList<Coord> generateCollisionPoints();
 	public abstract void rotate(double deg);
 	public abstract void draw(Graphics2D g2d, Paint p, boolean fill);
+	public abstract void translateX(double amt);
+	public abstract void translateY(double amt);
 	
 	public Collider(Color c, double rotation, double mass) {
 		super();
@@ -34,6 +37,7 @@ public abstract class Collider<T> {
 		//Each Polygon should have a list of collisions for square and points collisions
 		//Then you can check through each polygons list of collisions and if they already collided
 		//then you dont have to do the calculations again
+		this.innerCollision = false;
 	}
 	
 	//converts double array to an integer array
@@ -111,6 +115,17 @@ public abstract class Collider<T> {
 		return min;
 	}
 	
+	public Accel sumAccel() {
+		double ax = 0;
+		double ay = 0;
+		for(Accel a : this.accelerations) {
+			ax += a.getX();
+			ay += a.getY();
+		}
+		this.accelerations.clear();
+		return new Accel(ax, ay);
+	}
+	
 	public static CollisionEvent checkBoxCollision(Circle p1, Polygon p2) {
 		return null;
 		
@@ -156,5 +171,49 @@ public abstract class Collider<T> {
 	public void removeCollision(T collision) {
 		this.collisions.add(collision);
 		this.collisions.remove(collision);
+	}
+	
+	public boolean isOuterCollision() {
+		return outerCollision;
+	}
+	
+	public void setOuterCollision(boolean outerCollision) {
+		this.outerCollision = outerCollision;
+	}
+	
+	public boolean isInnerCollision() {
+		return innerCollision;
+	}
+	
+	public void setInnerCollision(boolean innerCollision) {
+		this.innerCollision = innerCollision;
+	}
+	
+	public double getVelX() {
+		return velX;
+	}
+	
+	public void setVelX(double acelX) {
+		this.velX = acelX;
+	}
+	
+	public double getVelY() {
+		return velY;
+	}
+	
+	public void setVelY(double acelY) {
+		this.velY = acelY;
+	}
+	
+	public ArrayList<Accel> getAccelerations() {
+		return accelerations;
+	}
+	
+	public void setAccelerations(ArrayList<Accel> accelerations) {
+		this.accelerations = accelerations;
+	}
+	
+	public void addAcel(Accel a) {
+		this.accelerations.add(a);
 	}
 }
