@@ -2,6 +2,7 @@ package physicsEngine;
 
 import java.awt.BasicStroke;
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
@@ -22,12 +23,15 @@ import physicsEngine.events.CollisionPointEvent;
 public class Enviroment extends JPanel {
 	private static final long serialVersionUID = 1L;
     public static ArrayList<Collider<Object>> objects = new ArrayList<>();
-	BufferedImage s;
-	public Queue<Coord> tp = new LinkedList<Coord>();
+	public static BufferedImage s;
+	public static BufferedImage logo;
+	public static Queue<Coord> tp = new LinkedList<Coord>();
+	public static int fps = 0;
 	
 	public Enviroment() {
 		try {
 			s = ImageIO.read(this.getClass().getResource("panel.png"));
+			logo = ImageIO.read(this.getClass().getResource("hiffinLogo.png"));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -48,26 +52,31 @@ public class Enviroment extends JPanel {
 	    g2d.setStroke(stroke);
 	    for(Collider<Object> obj : objects) {
 	    	g2d.setColor(obj.getC());
-	    	if(obj instanceof Polygon) g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(((Polygon) obj).getCoords())), Polygon.doubleToIntArray(Coord.getAllY(((Polygon)obj).getCoords())), ((Polygon) obj).getCoords().size());
-	    	if(obj instanceof Circle) g2d.drawOval((int)((Circle) obj).getX() - (int)((Circle) obj).getRadius(), (int)((Circle) obj).getY() - (int)((Circle) obj).getRadius(), (int)((Circle) obj).getRadius() * 2, (int)((Circle) obj).getRadius() * 2);
-	    	
-
+	    	obj.draw(g2d, obj.getC(), false);
 	    	
 	    	generateOuterCollider(g2d, obj);
 	    	if(obj instanceof Polygon) generateTrails(g2d, (Polygon)obj);
 	    	if(obj instanceof Circle) {
 	    		g2d.setPaint(new Color(0, 0, 0));
-	    		g2d.fillRect((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), 1, 1);
+	    	//	g2d.fillRect((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), 1, 1);
+	    		g2d.drawLine((int)((Circle) obj).getX(), (int)((Circle) obj).getY(), (int)(Math.cos(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getX()), (int)(Math.sin(obj.getRotation()) * ((Circle) obj).getRadius() + ((Circle) obj).getY()));
 	    	}
 	    } 
+	    
+	    Font f = new Font("Courier New", Font.BOLD, 40);
+	    g2d.setFont(f);
+		g2d.setColor(Color.RED);
+		g2d.drawString(Integer.toString(fps), 3, 8 + g2d.getFontMetrics().getHeight() / 2);
 	}
 	
 	public static void main(String[] args) {
 		JFrame frame = new JFrame("Textures");
 	    frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 	    frame.add(new Enviroment());
-	    frame.setSize(1280 + 16, 896 + 39);  //Should be 1280, 896 although
+	    frame.setSize(1280 + 16, 896 + 39);
 	    frame.setVisible(true);
+	    frame.setExtendedState(frame.getExtendedState() | JFrame.MAXIMIZED_BOTH);
+	    frame.setIconImage(logo);
 	    	    
 	    //Initializing some polygons
 	    double[] xp = new double[]{90, 90, 200, 200};
@@ -84,26 +93,41 @@ public class Enviroment extends JPanel {
 	    Polygon test = new Polygon(xp2, yp2, 10, 5, Color.blue);
 	    objects.add(test);
 	    
-	    Circle c = new Circle(500, 400, 120, Color.black, 20, 20);
+	    Circle c = new Circle(500, 400, 120, Color.black, Math.toRadians(270), 20);
 	    objects.add(c);
 	    
-	    Object monitor = new Object();
-        synchronized(monitor) {
-            while(true) {
-                frame.repaint();
-                //ArrayList<Collider<Object>> objects = new ArrayList<>(objects);   //you should pass in this objects array, then
-                //only update the main arraylist, use this so you dont edit a objects coordinates then do physics for the next object
-                //Hopefully you still understand this.
-                for(Collider<Object> p : objects) {
-                	p.update();
-                	p.rotate(.1);
-                	p.setDrawn(false);
-                }
-
-                try{Thread.sleep(1);}catch(InterruptedException ex){Thread.currentThread().interrupt();}
-            }
-        }
+	    runAnimation(frame);
 	}
+	
+	public static void runAnimation(JFrame frame) {
+	    int frames = 0;
+	    long totalTime = 0;
+	    long curTime = System.currentTimeMillis();
+	    long lastTime = curTime;
+	    // Start the loop.
+	    while (true) {
+		    try {
+		    	frame.repaint();
+				// Calculations for FPS.
+				lastTime = curTime;
+				curTime = System.currentTimeMillis();
+				totalTime += curTime - lastTime;
+				if (totalTime > 1000) {
+					totalTime -= 1000;
+					fps = frames;
+					frames = 0;
+				}
+				frames++;
+				for(Collider<Object> p : objects) {
+            	  p.update();
+            	  p.rotate(.1);
+                }
+				Thread.sleep(1);
+		    } catch (InterruptedException e) {
+		    	
+		    }
+		}
+    }
 	
 	//generate trail points
     public void generateTrails(Graphics2D g2d, Polygon obj) {
@@ -126,27 +150,29 @@ public class Enviroment extends JPanel {
     	g2d.drawPolygon(xPoints, yPoints, coords.size());
 		
     	ArrayList<CollisionEvent> collisions = obj.getOuterCollisions();
+    	ArrayList<Collider<Object>> objects = new ArrayList<>();
+    	for(CollisionEvent ce : collisions) 
+    		objects.add(ce.getP2());
+    	
     	if(!collisions.isEmpty()) {
-        	g2d.fillPolygon(xPoints, yPoints, coords.size());
-        	ArrayList<Coord> plen = obj.generateCollisionPoints();
+	    	g2d.fillPolygon(xPoints, yPoints, coords.size());
+	    	ArrayList<Coord> plen = obj.generateCollisionPoints();
 	    	
 	    	for(Coord pl : plen) {
 	    		g2d.setPaint(new Color(0, 255, 255, 255));
 	    		g2d.fillRect((int)pl.getX(), (int)pl.getY(), 2, 2);
 	    		
-	    		for(Collider<Object> obj2 : objects) { //You should change objects to a list that the first object is colliding with
+	    		for(Collider<Object> obj2 : objects) {
 		    			if(!(obj == obj2)) {
-		    			//if(obj2 instanceof Circle) System.out.println(pl.getX() + " = " + pl.getY() + " = " + obj.getC());
 		    			CollisionPointEvent cpe = obj2.isPointInCollider(pl.getX(), pl.getY(), obj);
 			    		if(cpe != null) {
 			    			obj2.addCollision(cpe);
-			    			obj.draw(g2d, new Color(255, 0, 0, 50));
+			    			obj2.draw(g2d, new Color(255, 0, 0, 50), true);
 			    		}
 	    			}
 	    		}
 	    	}
     	}
     }
-    
-    
 }
+

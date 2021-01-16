@@ -30,23 +30,23 @@ public class Circle extends Collider<Object> {
 		return Coord.arraysToCoords(new double[]{minX, maxX, maxX, minX}, new double[]{minY, minY, maxY, maxY});
 	}
 	
+	//Checks to see if x and y are within the collider
 	@Override
 	public CollisionPointEvent isPointInCollider(double x, double y, Collider<Object> p) {
-		//(x-center_x)^2 + (y - center_y)^2 < radius^2
-		//System.out.println(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2) - Math.pow(this.radius, 2));
-		//System.out.println(Math.pow(this.radius, 2));
 		if(Math.pow(x - this.x, 2) + Math.pow(y - this.y, 2) < Math.pow(this.radius, 2)) 
 			return new CollisionPointEvent(this, p, x, y);
 		
 		return null;
 	}
 	
+	//rotate object by certain degrees
 	@Override
 	public void rotate(double deg) {
 		// TODO Auto-generated method stub
 		
 	}
 	
+	//Creates collision points along the edges
 	@Override
 	public ArrayList<Coord> generateCollisionPoints() {
 		double sensitivity = 200;
@@ -60,12 +60,12 @@ public class Circle extends Collider<Object> {
 	}
 	
 	@Override
-	public void draw(Graphics2D g2d, Paint p) {
-		if(!this.isDrawn()) {
-			g2d.setPaint(p);
+	public void draw(Graphics2D g2d, Paint p, boolean fill) {
+		g2d.setPaint(p);
+		if(fill)
 			g2d.fillOval((int)(this.x - this.radius), (int)(this.y - this.radius), (int)(this.radius * 2), (int)(this.radius * 2));
-		}
-		this.setDrawn(true);
+		else
+			g2d.drawOval((int)(this.x - this.radius), (int)(this.y - this.radius), (int)(this.radius * 2), (int)(this.radius * 2));
 	}
 
 	public double getX() {

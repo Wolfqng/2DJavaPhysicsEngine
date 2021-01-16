@@ -13,12 +13,11 @@ public abstract class Collider<T> {
 	private double rotation;
 	private double mass;
 	private ArrayList<T> collisions = new ArrayList<>();
-	private boolean drawn = false;
 	
 	public abstract CollisionPointEvent isPointInCollider(double x, double y, Collider<Object> p);
 	public abstract ArrayList<Coord> generateCollisionPoints();
 	public abstract void rotate(double deg);
-	public abstract void draw(Graphics2D g2d, Paint p);
+	public abstract void draw(Graphics2D g2d, Paint p, boolean fill);
 	
 	public Collider(Color c, double rotation, double mass) {
 		super();
@@ -157,13 +156,5 @@ public abstract class Collider<T> {
 	public void removeCollision(T collision) {
 		this.collisions.add(collision);
 		this.collisions.remove(collision);
-	}
-	
-	public boolean isDrawn() {
-		return drawn;
-	}
-	
-	public void setDrawn(boolean drawn) {
-		this.drawn = drawn;
 	}
 }

@@ -144,12 +144,12 @@ public class Polygon extends Collider<Object> {
 	}
 
 	@Override
-	public void draw(Graphics2D g2d, Paint p) {
-		if(!this.isDrawn()) {
-			g2d.setPaint(p);
+	public void draw(Graphics2D g2d, Paint p, boolean fill) {
+		g2d.setPaint(p);
+		if(fill)
 			g2d.fillPolygon(Polygon.doubleToIntArray(Coord.getAllX(this.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(this.getCoords())), this.getCoords().size());
-		}
-		this.setDrawn(true);
+		else
+			g2d.drawPolygon(Polygon.doubleToIntArray(Coord.getAllX(this.getCoords())), Polygon.doubleToIntArray(Coord.getAllY(this.getCoords())), this.getCoords().size());
 	}
 	
 	public ArrayList<Coord> getCoords() {
