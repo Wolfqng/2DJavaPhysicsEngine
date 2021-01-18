@@ -54,8 +54,8 @@ public abstract class Physics {
 			
 			sumForces(obj, time);
 			if(!checkWallCollisions(obj)) fObjects.get(i).translateX(obj.getVelX() * time); //this if statement might remove x acel so you may need to remove it
-			if(!checkWallCollisions(obj)) fObjects.get(i).translateY(obj.getVelY() * time); //needed for not glitching through floor.
-			checkWallCollisions(obj);
+			if(!checkWallCollisions(obj)) fObjects.get(i).translateY(obj.getVelY() * time); //if statement needed for not glitching through floor.
+			checkWallCollisions(fObjects.get(i));
 			//Apply change in acceleration of objects here
 		}//for1
 		Enviroment.objects = fObjects;
