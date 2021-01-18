@@ -14,6 +14,7 @@ public abstract class Collider<T> {
 	private boolean outerCollision, innerCollision;
 	private ArrayList<T> collisions = new ArrayList<>();
 	private ArrayList<Accel> accelerations = new ArrayList<>();
+	private ArrayList<Coord> colliderPoints = new ArrayList<>();
 	
 	public abstract CollisionPointEvent isPointInCollider(double x, double y, Collider<Object> p);
 	public abstract ArrayList<Coord> generateCollisionPoints();
@@ -126,11 +127,6 @@ public abstract class Collider<T> {
 		return new Accel(ax, ay);
 	}
 	
-	public static CollisionEvent checkBoxCollision(Circle p1, Polygon p2) {
-		return null;
-		
-	}
-	
 	public Color getC() {
 		return c;
 	}
@@ -215,5 +211,13 @@ public abstract class Collider<T> {
 	
 	public void addAcel(Accel a) {
 		this.accelerations.add(a);
+	}
+	
+	public ArrayList<Coord> getColliderPoints() {
+		return colliderPoints;
+	}
+	
+	public void setColliderPoints(ArrayList<Coord> colliderPoints) {
+		this.colliderPoints = colliderPoints;
 	}
 }
