@@ -54,21 +54,21 @@ public class Polygon extends Collider<Object> {
 	}
 	
 	//Rotate an object
-		@Override
-		public void rotate(double deg) {
-			double rad = Math.toRadians(deg);
-			Coord centerCoord = Polygon.findCenter(this.getCoords());
-			for(Coord c : this.getCoords()) {
-				double x = c.getX();
-				double y = c.getY();
-				
-				x -= centerCoord.getX();
-				y -= centerCoord.getY();
-				
-				c.setX((x * Math.cos(rad)) - (y * Math.sin(rad)) + centerCoord.getX());
-				c.setY((y * Math.cos(rad)) + (x * Math.sin(rad)) + centerCoord.getY());
-			}
+	@Override
+	public void rotate(double deg) {
+		double rad = Math.toRadians(deg);
+		Coord centerCoord = Polygon.findCenter(this.getCoords());
+		for(Coord c : this.getCoords()) {
+			double x = c.getX();
+			double y = c.getY();
+			
+			x -= centerCoord.getX();
+			y -= centerCoord.getY();
+			
+			c.setX((x * Math.cos(rad)) - (y * Math.sin(rad)) + centerCoord.getX());
+			c.setY((y * Math.cos(rad)) + (x * Math.sin(rad)) + centerCoord.getY());
 		}
+	}
 	
 	//generates points on a polygons edges
 	@Override

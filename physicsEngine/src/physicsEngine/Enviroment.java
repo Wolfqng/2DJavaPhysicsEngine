@@ -91,14 +91,14 @@ public class Enviroment extends JPanel {
 	    //double[] xp1 = new double[]{100 + xoff, 140 + xoff, 210 + xoff, 210 + xoff, 300 + xoff, 350 + xoff};
 	    //double[] yp1 = new double[]{50, 200, 360, 90, 50, -20};
 	    //objects.add(new Polygon(xp1, yp1, 10, 5, Color.green));
-	    int xoff2 = 100;
+	    int xoff2 = 170;
 	    int yoff = 200;
 	    double[] xp2 = new double[]{100 + xoff2, 140 + xoff2, 210 + xoff2, 210 + xoff2, 300 + xoff2};
 	    double[] yp2 = new double[]{50 + yoff, 200 + yoff, 360 + yoff, 90 + yoff, 50 + yoff};
 	    Polygon test = new Polygon(xp2, yp2, 10, 5, Color.blue);
 	    objects.add(test);
 	    
-	    Circle c = new Circle(500, 400, 120, Color.black, Math.toRadians(270), 20);
+	    Circle c = new Circle(600, 400, 120, Color.black, Math.toRadians(270), 20);
 	    objects.add(c);
 	    
 	    runAnimation(frame);
@@ -128,6 +128,7 @@ public class Enviroment extends JPanel {
             	  p.update();
             	  p.rotate(.1);
             	  Physics.applyForces(new ArrayList<>(objects), time);
+            	  //p.update();
                 }
 				Thread.sleep(1);
 		    } catch (InterruptedException e) {
@@ -193,8 +194,7 @@ public class Enviroment extends JPanel {
     		g2d.fillPolygon(xPoints, yPoints, coords.size());
     	
     	if(obj.isInnerCollision()) 
-    		obj.draw(g2d, new Color(255, 0, 0, 50), true);	
-    	
+    		obj.draw(g2d, new Color(255, 0, 0, 50), true);
     }
     
 }

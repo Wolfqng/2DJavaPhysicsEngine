@@ -43,7 +43,6 @@ public class Circle extends Collider<Object> {
 	@Override
 	public void rotate(double deg) {
 		// TODO Auto-generated method stub
-		
 	}
 	
 	//Creates collision points along the edges
